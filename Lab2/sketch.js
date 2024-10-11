@@ -1,6 +1,6 @@
 class Point {
 	strokeWeight = 5;
-	innerDiameter = 10;
+	innerDiameter = 15;
 
 	constructor(x, y) {
 		this.x = x;
@@ -14,18 +14,17 @@ class Point {
 		circle(this.x, this.y, this.innerDiameter);
 	}
 
-	isClicked(point) {
-		// ?
-		const d = dist(point.x, point.y, this.x, this.y);
-		return d < (this.innerDiameter + this.strokeWeight) / 2;
-	}
-
 	addPoint(point) {
 		return new Point(this.x + point.x, this.y + point.y);
 	}
 
 	multiply(factor) {
 		return new Point(this.x * factor, this.y * factor);
+	}
+
+	isHovered(point) {
+		const d = dist(point.x, point.y, this.x, this.y);
+		return d < (this.innerDiameter + this.strokeWeight) / 2;
 	}
 }
 
@@ -36,36 +35,24 @@ class BezierCurve {
 
 	addPoint(point) {
 		this.points.push(point);
-		this.buildPolynomial();
 	}
 
-	buildPolynomial() {
+	polynomial(t) {
 		const n = this.points.length - 1;
-		const cArr = [];
-		for (let j = 0; j <= n; j++) {
-			const c = factorial(n) / factorial(n - j);
-			let sum = new Point(0, 0);
-			for (let i = 0; i <= j; i++) {
-				sum = sum.addPoint(
-					points[i].multiply(
-						(-1) ** (i + j) / (factorial(i) * factorial(j - i))
-					)
-				);
-			}
-			cArr.push(sum.multiply(c));
+		let result = new Point(0, 0);
+		for (let i = 0; i <= n; i++) {
+			const coefficient =
+				(factorial(n) / (factorial(i) * factorial(n - i))) *
+				Math.pow(t, i) *
+				Math.pow(1 - t, n - i);
+
+			result = result.addPoint(this.points[i].multiply(coefficient));
 		}
 
-		this.polynomial = function (t) {
-			let sum = new Point(0, 0);
-			for (let i = 0; i <= n; i++) {
-				sum = sum.addPoint(cArr[i].multiply(t ** i));
-			}
-			return sum;
-		};
+		return result;
 	}
 
 	draw() {
-		this.buildPolynomial();
 		strokeWeight(2);
 		noFill();
 		stroke('#ffd8a8');
@@ -78,7 +65,6 @@ class BezierCurve {
 		strokeWeight(3);
 		noFill();
 		stroke('#e8590c');
-
 		beginShape();
 		for (let t = 0; t < 1.01; t += 0.01) {
 			const point = this.polynomial(t);
@@ -93,16 +79,7 @@ function factorial(n) {
 	return n * factorial(n - 1);
 }
 
-const points = [
-	new Point(100, 300),
-	new Point(200, 100),
-	new Point(300, 250),
-	new Point(400, 150),
-	new Point(500, 200),
-	new Point(400, 250),
-];
-
-const bezierCurve = new BezierCurve(points);
+const bezierCurve = new BezierCurve([]);
 
 function setup() {
 	createCanvas(window.innerWidth, window.innerHeight);
@@ -111,4 +88,10 @@ function setup() {
 function draw() {
 	background('#dbe4ff');
 	bezierCurve.draw();
+}
+
+function mousePressed() {
+	const point = new Point(mouseX, mouseY);
+	if (bezierCurve.points.some(p => p.isHovered(point))) return;
+	bezierCurve.addPoint(point);
 }
