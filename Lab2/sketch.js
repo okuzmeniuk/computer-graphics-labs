@@ -5,12 +5,13 @@ class Point {
 	constructor(x, y) {
 		this.x = x;
 		this.y = y;
+		this.selected = false;
 	}
 
 	draw() {
-		fill('#e8590c');
+		fill(this.selected ? '#2b8a3e' : '#d9480f');
 		strokeWeight(this.strokeWeight);
-		stroke('#ffd8a8');
+		stroke(this.selected ? '#a9e34b' : '#fcc419');
 		circle(this.x, this.y, this.innerDiameter);
 	}
 
@@ -55,7 +56,7 @@ class BezierCurve {
 	draw() {
 		strokeWeight(2);
 		noFill();
-		stroke('#ffd8a8');
+		stroke('#fcc419');
 		beginShape();
 		this.points.forEach(point => vertex(point.x, point.y));
 		endShape();
@@ -64,7 +65,7 @@ class BezierCurve {
 
 		strokeWeight(3);
 		noFill();
-		stroke('#e8590c');
+		stroke('#d9480f');
 		beginShape();
 		for (let t = 0; t < 1.01; t += 0.01) {
 			const point = this.polynomial(t);
@@ -94,4 +95,29 @@ function mousePressed() {
 	const point = new Point(mouseX, mouseY);
 	if (bezierCurve.points.some(p => p.isHovered(point))) return;
 	bezierCurve.addPoint(point);
+}
+
+function mouseClicked() {
+	bezierCurve.points.forEach(p => (p.selected = false));
+}
+
+function doubleClicked() {
+	bezierCurve.points.forEach(
+		p => (p.selected = p.isHovered(new Point(mouseX, mouseY)))
+	);
+}
+
+function mouseDragged() {
+	bezierCurve.points.forEach(p => {
+		if (p.selected) {
+			p.x = mouseX;
+			p.y = mouseY;
+		}
+	});
+}
+
+function keyPressed() {
+	if (keyCode === 46) {
+		bezierCurve.points = bezierCurve.points.filter(p => !p.selected);
+	}
 }
